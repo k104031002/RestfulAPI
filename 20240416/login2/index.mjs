@@ -3,13 +3,13 @@ import multer from 'multer';
 import cors from "cors";
 import moment from 'moment';
 import dotenv from 'dotenv';
-import jwt from 'jsonwebtoken';
+import jwt, { decode } from 'jsonwebtoken';
 import users from './users.mjs';
 
 dotenv.config();
 const secretKey = process.env.SECRET_KEY;
 const upload = multer();
-const whiteList = ["http://localhost:5500", "http://127.0.0.1:5500"];
+const whiteList = ["http://localhost:8080", "http://127.0.0.1:8080"];
 const corsOptions = {
     credentials: true,
     origin(origin, callback) {
@@ -51,16 +51,72 @@ app.post("/api/users/login", upload.none(), (req, res) => {
             message: "使用者驗證失敗"
         });
     }
-    res.status(200).json({ message: "登入成功" });
 });
-app.get("/api/users/logout", (req, res) => {
-    res.status(200).json({ message: "登出成功" });
+app.get("/api/users/logout", checkToken, (req, res) => {
+    // console.log(req.decode);
+    const user = users.find(u => u.account === req.decode.account);
+    if (user) {
+        const token = jwt.sign({
+            account: undefined,
+            name: undefined,
+            mail: undefined,
+            head: undefined
+        }, secretKey, { expiresIn: "-10s" })
+        res.status(200).json({
+            status: "success",
+            token
+        });
+    } else {
+        res.status(401).json({
+            status: "error",
+            message: "檢查狀態失敗，請重新登入"
+        })
+    }
 });
-app.post("/api/users/status", (req, res) => {
-    res.status(200).json({ message: "檢查登入或登出的狀態" });
+app.post("/api/users/status", checkToken, (req, res) => {
+    const user = users.find(u => u.account === req.decode.account);
+    if (user) {
+        const token = jwt.sign({
+            account: undefined,
+            name: undefined,
+            mail: undefined,
+            head: undefined
+        }, secretKey, { expiresIn: "30m" })
+        res.status(200).json({
+            status: "success",
+            token
+        });
+    } else {
+        res.status(401).json({
+            status: "error",
+            message: "登出失敗，請稍後再次嘗試"
+        })
+    }
 });
 
 
 app.listen(3000, () => {
     console.log("server is running http://localhost:3000");
 })
+
+function checkToken(req, res, next) {
+    let token = req.get("authorization");
+    if (token && token.indexOf("Bearer ") === 0) {
+        token = token.slice(7);
+        jwt.verify(token, secretKey, (error, decode) => {
+            if (error) {
+                return res.status(401).json({
+                    status: "error",
+                    message: "驗證失敗，請重新再來"
+                })
+            }
+            req.decode = decode;
+            next();
+        });
+    } else {
+        res.status(400).json({
+            status: "error",
+            message: "沒有驗證資料，請重新登入"
+        })
+    }
+}
