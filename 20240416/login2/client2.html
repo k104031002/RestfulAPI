@@ -61,6 +61,7 @@
         const API_status = "http://localhost:3000/api/users/status"
 
         btnLogin.addEventListener("click", async () => {
+            let msg = "發生錯誤";
             let formData = new FormData();
             formData.append("account", document.querySelector("[name=account]").value);
             formData.append("password", document.querySelector("[name=password]").value);
@@ -68,16 +69,53 @@
                 if (response.data.status === "success") {
                     return response.data.token
                 } else {
+                    msg = response.data.message;
                     return undefined
                 }
             }).catch(err => {
                 console.log(err);
+                msg = err.response.data.message;
                 return undefined
             });
-            console.log(token);
-        });
-        btnLogout.addEventListener("click", () => {
+            if (token) {
+                localStorage.setItem("aaa_token", token);
+                user = jwt_decode(token);
+                setMain();
+            } else {
+                alert(msg);
+            }
 
+        });
+        btnLogout.addEventListener("click",async() => {
+            token = localStorage.getItem("aaa_token");
+            console.log(token);
+            let data = await axios.get(API_logout, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }).then(response => {
+                
+                if (response.data.status === "success") {
+                    return response.data.token;
+                } else {
+                    msg = err.response.data.message;
+                    return undefined;
+                }
+            }).catch(err => {
+                console.log(err);
+                msg = err.response.data.message;
+                return undefined
+            })
+            if (data) {
+                localStorage.setItem("aaa_token", data);
+                user = undefined
+                setForm();
+            } else {
+                setForm()
+            }
+            if(msg){
+                alert(msg)
+            }
         });
 
         init();
@@ -89,15 +127,20 @@
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
-            }).then(result => {
-                console.log(result);
+            }).then(response => {
+                if (response.data.status === "success") {
+                    return response.data.token;
+                } else {
+                    return undefined;
+                }
             }).catch(err => {
                 console.log(err);
                 return undefined
             })
-            console.log(data);
             if (data) {
-                setMain()
+                localStorage.setItem("aaa_token", token);
+                user = jwt_decode(token);
+                setMain();
             } else {
                 setForm()
             }
