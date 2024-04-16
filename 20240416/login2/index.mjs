@@ -69,7 +69,7 @@ app.get("/api/users/logout", checkToken, (req, res) => {
     } else {
         res.status(401).json({
             status: "error",
-            message: "檢查狀態失敗，請重新登入"
+            message: "登出失敗，請重新登入"
         })
     }
 });
@@ -77,10 +77,10 @@ app.post("/api/users/status", checkToken, (req, res) => {
     const user = users.find(u => u.account === req.decode.account);
     if (user) {
         const token = jwt.sign({
-            account: undefined,
-            name: undefined,
-            mail: undefined,
-            head: undefined
+            account: user.account,
+            name: user.name,
+            mail: user.mail,
+            head: user.head
         }, secretKey, { expiresIn: "30m" })
         res.status(200).json({
             status: "success",
@@ -89,7 +89,7 @@ app.post("/api/users/status", checkToken, (req, res) => {
     } else {
         res.status(401).json({
             status: "error",
-            message: "登出失敗，請稍後再次嘗試"
+            message: "檢查狀態失敗，請稍後再次嘗試"
         })
     }
 });
