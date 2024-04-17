@@ -37,6 +37,46 @@ app.get("/", (req, res) => {
     res.send("首頁");
 });
 
+app.get("/api/users", (req, res) => {
+    res.send("獲取所有使用者");
+});
+
+app.get("/api/users/search", (req, res) => {
+    res.send("使用 ID 作為搜尋條件來搜尋使用者");
+});
+
+app.get("/api/users/status", (req, res) => {
+    res.send("檢查使用者登入登出狀態");
+});
+
+app.get("/api/users/:id/", (req, res) => {
+    res.send(`獲取特定 ID 的使用者 ${req.params.id}`);
+});
+
+app.post("/api/users/", (req, res) => {
+    res.send("新增一個使用者");
+});
+
+app.put("/api/users/:id/", (req, res) => {
+    res.send(`更新特定 ID 的使用者 ${req.params.id}`);
+});
+
+app.delete("/api/users/:id/", (req, res) => {
+    res.send(`刪除特定 ID 的使用者 ${req.params.id}`);
+});
+
+app.post("/api/users/login", (req, res) => {
+    res.send("使用者登入");
+});
+
+app.post("/api/users/logout", (req, res) => {
+    res.send("使用者登出");
+});
+
+
+
+
+
 
 
 app.listen(3000, () => {
