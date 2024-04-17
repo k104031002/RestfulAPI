@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 import { Low } from "lowdb";
 import { JSONFile } from "lowdb/node";
 import dotenv from "dotenv";
+import router from "./product.mjs";
 
 dotenv.config();
 const secretKey = process.env.SECRET_KEY;
@@ -32,6 +33,7 @@ const app = express();
 app.use(cors(corsOptions));
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+app.use("/",router)
 
 app.get("/", (req, res) => {
     res.send("首頁");
