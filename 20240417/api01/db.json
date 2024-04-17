@@ -5,8 +5,18 @@
       "account": "bro",
       "password": "a12345",
       "name": "bro蟹",
+      "mail": "bro@rrrr.com",
       "head": "http://randomuser.me/api/portraits/men/44.jpg"
+    },
+    {
+      "id": "80086816-cd32-9999-9b73-f58333333333",
+      "account": "wtf",
+      "password": "a12345",
+      "name": "王德發",
+      "mail": "wtf@wtffoxsay.com",
+      "head": "http://randomuser.me/api/portraits/men/49.jpg"
     }
+
   ],
   "products": [
     {

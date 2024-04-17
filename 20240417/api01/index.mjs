@@ -10,9 +10,9 @@ import dotenv from "dotenv";
 import router from "./product.mjs";
 
 dotenv.config();
-const secretKey = process.env.SECRET_KEY;
+const secretKey = process.env.SECERT_KEY;
 
-
+let blackListedToken = []
 let whitelist = ["http://localhost:5500", "http://localhost:3000"];
 let corsOptions = {
     credentials: true,
@@ -29,7 +29,6 @@ const defaultData = { products: [], user: [] };
 const db = new Low(new JSONFile('db.json'), defaultData);
 await db.read();
 
-console.log(db.data);
 
 const app = express();
 app.use(cors(corsOptions));
@@ -97,9 +96,28 @@ app.get("/api/users/:id/", async (req, res) => {
     }
 });
 
-app.post("/api/users/", (req, res) => {
+app.post("/api/users/", upload.none(), async (req, res) => {
     // res.send("新增一個使用者");
+    let user, error;
+    user = await addUser(req).then(result => result).catch(err => {
+        error = err;
+        console.log(err);
+        return undefined;
+    });
+    if (error) {
+        let message = (error.message) ? error.message : "Invalid input data";
+        res
+            .status(409)
+            .json({ status: "error", message });
+        return false
+    }
+    if (user) {
 
+        res.status(200).json({
+            status: "success",
+            message: "Yo bro 你的使用者創建成功 "
+        })
+    }
 });
 
 app.put("/api/users/:id/", (req, res) => {
@@ -110,12 +128,49 @@ app.delete("/api/users/:id/", (req, res) => {
     res.send(`刪除特定 ID 的使用者 ${req.params.id}`);
 });
 
-app.post("/api/users/login", (req, res) => {
-    res.send("使用者登入");
+app.post("/api/users/login", upload.none(), async (req, res) => {
+    // res.send("使用者登入");
+    let user, error;
+    user = await userLogin(req).then(result => result).catch(err => {
+        error = err;
+        console.log(err);
+        return undefined
+    });
+    if (error) {
+        let message = (error.message) ? error.message : "Invalid username or password";
+        res
+            .status(400)
+            .json({ status: "error", message });
+        return false
+    }
+    if (user) {
+        let token = jwt.sign({
+            account: user.account,
+            name: user.name,
+            head: user.head
+        }, secretKey, { expiresIn: "30m" });
+        res.status(200).json({
+            status: "success",
+            message: "Yo 面 登入成功 ",
+            token
+        })
+    }
 });
 
-app.post("/api/users/logout", (req, res) => {
-    res.send("使用者登出");
+app.post("/api/users/logout", checkToken, (req, res) => {
+    // res.send("使用者登出");
+    blackListedToken.push(req.token);
+    let token = jwt.sign({
+        account: undefined,
+        name: undefined,
+        head: undefined
+    }, secretKey, {
+        expiresIn: "-10s"
+    });
+    res.status(200).json({
+        status: "success",
+        message: "使用者登出成功"
+    })
 });
 
 
@@ -128,21 +183,44 @@ app.listen(3000, () => {
     console.log("server is running at http://localhost:3000 蟹");
 });
 
+function userLogin(req) {
+    return new Promise((resolve, reject) => {
+        const { account, password } = req.body;
+        let result = db.data.user.find(u => u.account === account && u.password === password);
+        if (result) {
+            resolve(result);
+        } else {
+            reject(new Error("找不到使用者"))
+        }
+    })
+
+}
+
 async function addUser(req) {
     const { account, password, name, email, head } = req.body;
 
-    let id = uuidv4();
-    db.data.user.push({
-        id,
-        account,
-        password,
-        name,
-        email,
-        head
-    });
-    await db.write();
-    return new Promise((resolve, reject) => {
-        resolve(id);
+    return new Promise(async (resolve, reject) => {
+        let result = db.data.user.find(u => u.account === account);
+        if (result) {
+            reject(new Error("帳號已存在"));
+            return false;
+        }
+        result = db.data.user.find(u => u.email === email);
+        if (result) {
+            reject(new Error("信箱已存在"));
+            return false;
+        }
+        let id = uuidv4();
+        db.data.user.push({
+            id,
+            account,
+            password,
+            name,
+            email,
+            head
+        });
+        await db.write();
+        resolve({ id })
     });
 }
 
@@ -169,6 +247,11 @@ function checkToken(req, res, next) {
 
     if (token && token.indexOf("Bearer ") === 0) {
         token = token.slice(7);
+        if (blackListedToken.includes(token)) {
+            return res
+                .status(401)
+                .json({ status: "error", message: "token已經過期" });
+        }
         jwt.verify(token, secretKey, (err, decoded) => {
             if (err) {
                 return res
@@ -176,6 +259,7 @@ function checkToken(req, res, next) {
                     .json({ status: "error", message: "登入驗證失效，請重新登入。" });
             } else {
                 req.decoded = decoded;
+                req.token = token;
                 next();
             }
         });
