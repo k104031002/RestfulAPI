@@ -29,19 +29,40 @@ const defaultData = { products: [], user: [] };
 const db = new Low(new JSONFile('db.json'), defaultData);
 await db.read();
 
+console.log(db.data);
+
 const app = express();
 app.use(cors(corsOptions));
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
-app.use("/",router)
+app.use("/", router)
 
 app.get("/", (req, res) => {
     res.send("首頁");
 });
 
-app.get("/api/users", (req, res) => {
-    res.send("獲取所有使用者");
-});
+app.get("/api/users", async (req, res) => {
+    // res.send("獲取所有使用者");
+    // getUserAll
+    let user, error;
+    user = await getUserAll().then(result => result).catch(err => {
+        error = err;
+        console.log(err);
+        return undefined;
+    });
+    if (error) {
+        res
+            .status(401)
+            .json({ status: "error", message: "Unauthorized access" });
+        return false
+    }
+    if (user) {
+        res.status(200).json({
+            status: "success",
+            user
+        })
+    }
+})
 
 app.get("/api/users/search", (req, res) => {
     res.send("使用 ID 作為搜尋條件來搜尋使用者");
@@ -51,12 +72,34 @@ app.get("/api/users/status", (req, res) => {
     res.send("檢查使用者登入登出狀態");
 });
 
-app.get("/api/users/:id/", (req, res) => {
-    res.send(`獲取特定 ID 的使用者 ${req.params.id}`);
+app.get("/api/users/:id/", async (req, res) => {
+    // res.send(`獲取特定 ID 的使用者 ${req.params.id}`);
+    // getUser
+    let user, error;
+    user = await getUser(req).then(result => result).catch(err => {
+        error = err;
+        console.log(err);
+        return undefined;
+    });
+    if (error) {
+        let message = (error.message) ? error.message : "user not found";
+        res
+            .status(404)
+            .json({ status: "error", message });
+        return false
+    }
+    if (user) {
+        let { password, ...newUser } = user;
+        res.status(200).json({
+            status: "success",
+            user: newUser
+        })
+    }
 });
 
 app.post("/api/users/", (req, res) => {
-    res.send("新增一個使用者");
+    // res.send("新增一個使用者");
+
 });
 
 app.put("/api/users/:id/", (req, res) => {
@@ -83,7 +126,43 @@ app.post("/api/users/logout", (req, res) => {
 
 app.listen(3000, () => {
     console.log("server is running at http://localhost:3000 蟹");
-})
+});
+
+async function addUser(req) {
+    const { account, password, name, email, head } = req.body;
+
+    let id = uuidv4();
+    db.data.user.push({
+        id,
+        account,
+        password,
+        name,
+        email,
+        head
+    });
+    await db.write();
+    return new Promise((resolve, reject) => {
+        resolve(id);
+    });
+}
+
+function getUser(req) {
+    let id = req.params.id;
+    return new Promise((resolve, reject) => {
+        let result = db.data.user.find(u => u.id === id);
+        if (result) {
+            resolve(result);
+        } else {
+            reject(new Error("user not found"));
+        }
+    });
+}
+
+function getUserAll() {
+    return new Promise(resolve => {
+        resolve(db.data.user)
+    });
+}
 
 function checkToken(req, res, next) {
     let token = req.get("Authorization");
