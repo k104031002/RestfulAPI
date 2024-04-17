@@ -67,8 +67,35 @@ app.get("/api/users/search", (req, res) => {
     res.send("使用 ID 作為搜尋條件來搜尋使用者");
 });
 
-app.get("/api/users/status", (req, res) => {
-    res.send("檢查使用者登入登出狀態");
+app.get("/api/users/status", checkToken, async (req, res) => {
+    // res.send("檢查使用者登入登出狀態");
+    let user, error;
+    const { account } = req.decoded;
+    user = await getUserByAccount(account).then(result => result).catch(err => {
+        error = err;
+        console.log(err);
+        return undefined;
+    });
+    if (error) {
+        let message = (error.message) ? error.message : "Bad Request";
+        res
+            .status(400)
+            .json({ status: "error", message });
+        return false
+    }
+    if (user) {
+        blackListedToken.push(req.token)
+        let token = jwt.sign({
+            account: user.account,
+            name: user.name,
+            head: user.head
+        }, secretKey, { expiresIn: "30m" });
+        res.status(200).json({
+            status: "success",
+            message: "已登入",
+            token
+        });
+    }
 });
 
 app.get("/api/users/:id/", async (req, res) => {
@@ -120,12 +147,63 @@ app.post("/api/users/", upload.none(), async (req, res) => {
     }
 });
 
-app.put("/api/users/:id/", (req, res) => {
-    res.send(`更新特定 ID 的使用者 ${req.params.id}`);
-});
-
-app.delete("/api/users/:id/", (req, res) => {
-    res.send(`刪除特定 ID 的使用者 ${req.params.id}`);
+app.put("/api/users/:id/", checkToken, upload.none(), async (req, res) => {
+    // res.send(`更新特定 ID 的使用者 ${req.params.id}`);
+    let user, error;
+    user = await userModify(req).then(result => result).catch(err => {
+        error = err;
+        console.log(err);
+        return undefined
+    });
+    if (error) {
+        let message = (error.message) ? error.message : "User not found";
+        res
+            .status(404)
+            .json({ status: "error", message });
+        return false
+    }
+    if (user) {
+        blackListedToken.push(req.token)
+        let token = jwt.sign({
+            account: user.account,
+            name: user.name,
+            head: user.head
+        }, secretKey, { expiresIn: "30m" });
+        res.status(200).json({
+            status: "success",
+            message: "更新成功",
+            token
+        });
+    }
+})
+app.delete("/api/users/:id/", checkToken, upload.none(), async (req, res) => {
+    // res.send(`刪除特定 ID 的使用者 ${req.params.id}`);
+    let user, error;
+    user = await userDelete(req).then(result => result).catch(err => {
+        error = err;
+        console.log(err);
+        return undefined
+    });
+    if (error) {
+        let message = (error.message) ? error.message : "User not found";
+        res
+            .status(404)
+            .json({ status: "error", message });
+        return false
+    }
+    if (user) {
+        blackListedToken.push(req.token)
+        let token = jwt.sign({
+            account: undefined,
+            name: undefined,
+            head: undefined
+        }, secretKey, { expiresIn: "-10s" });
+        res.status(200).json({
+            status: "success",
+            message: "刪除成功 面",
+            token
+        });
+    }
 });
 
 app.post("/api/users/login", upload.none(), async (req, res) => {
@@ -183,6 +261,35 @@ app.listen(3000, () => {
     console.log("server is running at http://localhost:3000 蟹");
 });
 
+function userDelete(req) {
+    return new Promise(async (resolve, reject) => {
+        const id = req.params.id;
+        let user = db.data.user.find(u => u.id === id);
+        if (user) {
+            db.data.user = db.data.user.filter(u => u.id !== id)
+            await db.write();
+            resolve(user)
+        } else {
+            reject(new Error("找無人"))
+        }
+    })
+}
+
+function userModify(req) {
+    return new Promise(async (resolve, reject) => {
+        const id = req.params.id;
+        const { password, name, head } = req.body;
+        let user = db.data.user.find(u => u.id === id);
+        if (user) {
+            Object.assign(user, { password, name, head })
+            await db.write();
+            resolve(user)
+        } else {
+            reject(new Error("找無人"))
+        }
+    })
+}
+
 function userLogin(req) {
     return new Promise((resolve, reject) => {
         const { account, password } = req.body;
@@ -221,6 +328,17 @@ async function addUser(req) {
         });
         await db.write();
         resolve({ id })
+    });
+}
+
+function getUserByAccount(account) {
+    return new Promise((resolve, reject) => {
+        let result = db.data.user.find(u => u.account === account);
+        if (result) {
+            resolve(result);
+        } else {
+            reject(new Error("找無人"));
+        }
     });
 }
 
