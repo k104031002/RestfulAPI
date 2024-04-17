@@ -9,6 +9,17 @@ const defaultData = {
 const db = new Low(new JSONFile("db.json"), defaultData);
 await db.read();
 
+// 刪除
+// db.data.products = db.data.products.filter(p => p.id !== "75f53fef-5b26-42a9-942c-98a3754a8378")
+
+
+// await db.write();
+
+// 更新
+// db.data.products.find(p => p.id === "75f53fef-5b26-42a9-942c-98a3754a8378")
+//     .stock = 59
+// await db.write();
+
 // 讀取
 // let data = db.data.products.find(p => p.id === "46582a66-f4a3-4855-8bf4-1c1da8f7775d")
 // let data = db.data.products.find(p => p.title === "damn糕");
@@ -19,7 +30,7 @@ let limit = 5;
 let start = (page - 1) * limit;
 let end = page * limit;
 // let data = db.data.products.slice(start, end);
-let data = db.data.products.sort((a, b) => { a.price - b.price }).slice(start, end);
+let data = db.data.products.sort((a, b) => b.price - a.price).slice(start, end);
 console.log(data);
 
 // console.log(db.data.user);
