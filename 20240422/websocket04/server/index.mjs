@@ -46,9 +46,17 @@ wss.on("connection", (connection) => {
             const { message, fromID, targetUserID } = parsedMessage;
             if (targetUserID) {
                 // 悄悄話
-
-
-                return fromID
+                const targetClient = clients[targetUserID];
+                if (targetClient.readyState === WebSocket.OPEN) {
+                    targetClient.send(JSON.stringify({
+                        type: "message",
+                        message,
+                        fromID,
+                        targetUserID,
+                        private: true
+                    }));
+                }
+                return false
             }
             // 公開說
             wss.clients.forEach((client) => {

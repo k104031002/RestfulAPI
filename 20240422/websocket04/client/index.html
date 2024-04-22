@@ -35,13 +35,14 @@
     <div class="container-lg h-100 bg-primary-subtle p-2 main d-flex flex-column">
         <div class="up d-flex">
             <div class="left bg-warning-subtle me-1 p-1">
-                <div>
-                    ${fromID}
-                    <div class="badge bg-primary">說</div>:
-                    ${}
-                </div>
+                <!-- <div class="d-flex align-items-center">
+                    <div>${fromID}</div>
+                    <div class="badge bg-primary ms-1 me-3">說</div>:
+                    <div>${message}</div>
+                </div> -->
             </div>
             <div class="right bg-secondary-subtle h-100 rounded-1 p-1">
+                <!-- <div class="btn btn-primary w-100 mb-1">${client}</div> -->
             </div>
         </div>
         <div class="input-group input-group-lg my-2 down">
@@ -58,6 +59,7 @@
         const rightArea = document.querySelector(".up .right");
         const userID = new Date().getTime().toString();
         let clientList;
+        let targetUserID;
 
         ws.addEventListener("open", () => {
             console.log('新的使用者連線,註冊使用者ID');
@@ -81,7 +83,21 @@
                 setClientList()
             }
             if (result.type === "message") {
+                let fromID = result.fromID;
+                if (fromID === userID) {
+                    fromID = "我啦 博"
+                }
+                let action = `<div class="badge bg-primary ms-1 me-3">說</div>:`;
+                if (result.targetUserID) {
+                    action = `<div class="badge bg-danger ms-1 me-3">悄悄對你說</div>:`;
+                }
 
+                leftArea.innerHTML += `<div class="d-flex align-items-center">
+                    <div>${fromID}</div>
+                    ${action}
+                    <div>${result.message}</div>
+                </div>`
+                scrollToBottom();
             }
         });
 
@@ -93,6 +109,24 @@
                     sendMsg();
                 }
             }
+        })
+
+        rightArea.addEventListener("click", e => {
+            if (e.target.classList.contains("btn-user")) {
+                let tg = e.target;
+                let idn = tg.getAttribute("idn");
+                if (targetUserID && targetUserID !== idn) {
+                    return false;
+                }
+
+                if (tg.classList.contains("btn-danger")) {
+                    tg.classList.remove("btn-danger");
+                    targetUserID = undefined;
+                } else {
+                    tg.classList.add("btn-danger")
+                    targetUserID = idn
+                }
+            };
         })
 
         function sendMsg() {
@@ -107,11 +141,30 @@
             }
             ws.send(JSON.stringify(params));
             msgInput.value = "";
+            if (targetUserID) {
+                let action = `<div class="badge bg-danger ms-1 me-3">悄悄對${targetUserID}說</div>:`;
+                leftArea.innerHTML += `<div class="d-flex align-items-center">
+                    <div>我啦 博</div>
+                    ${action}
+                    <div>${message}</div>
+                </div>`
+            }
         }
 
+        function scrollToBottom(){
+            leftArea.scrollTop = leftArea.scrollHeight - leftArea.clientHeight;
+        }
 
         function setClientList() {
+            let clientDOM = "";
 
+            clientList.forEach(client => {
+                if (client !== userID) {
+                    let node = `<div idn="${client}" class="btn btn-primary w-100 mb-1 btn-user">${client}</div>`;
+                    clientDOM += node
+                }
+            });
+            rightArea.innerHTML = clientDOM
         }
     </script>
 </body>
