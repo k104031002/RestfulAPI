@@ -4,19 +4,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./css/bootstrap.css">
     <style>
-        .myself::after {
-            content: "<= 我啦";
-            font-size: 12px;
-            color: red;
-        }
+       html, body{
+height: 100%;
+}
+.main .down{
+height: 55px;
+}
+.main .up{
+height: calc(100% - 55px);
+}
+.main .right{
+width: 170px;
+}
+.main .left{
+width: calc(100% - 170px);
+overflow-y: scroll;
+}
     </style>
     <title>client</title>
 </head>
 
 <body>
-    <div>179234293640456</div>
-    <div class="myself">179234299544821</div>
+    <div class="container-lg h-100 bg-primary-subtle p-2 main d-flex flex-column">
+        <div class="up d-flex">
+        <div class="left bg-warning-subtle me-1 p-1"></div>
+        <div class="right bg-secondary-subtle h-100 rounded-1 p-1">
+        </div>
+        </div>
+        <div class="input-group input-group-lg my-2 down">
+        <input type="text" class="form-control" name="msg">
+        <div class="btn btn-primary input-group-text btn-send">送出訊息</div>
+        </div>
+        </div>
 
     <script>
         const ws = new WebSocket("ws://localhost:8080")

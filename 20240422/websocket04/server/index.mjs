@@ -35,6 +35,12 @@ wss.on("connection", (connection) => {
 
             return false;
         }
+        // {
+        //     type: "message",
+        //         message: "你好",
+        //             fromID: "18982734564561",
+        //                 targetUserID: "17815219291211"
+        // }
 
         if (parsedMessage.type === "message") {
 
