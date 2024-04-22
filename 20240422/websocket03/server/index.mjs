@@ -38,7 +38,7 @@ wss.on("connection", (connection) => {
 
         if (parsedMessage.type === "message") {
 
-            return falsee;
+            return false;
         }
         // wss.clients.forEach((client) => {
         //     if (client.readyState === WebSocket.OPEN) {

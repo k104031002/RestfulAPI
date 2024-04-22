@@ -6,22 +6,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./css/bootstrap.css">
     <style>
-       html, body{
-height: 100%;
-}
-.main .down{
-height: 55px;
-}
-.main .up{
-height: calc(100% - 55px);
-}
-.main .right{
-width: 170px;
-}
-.main .left{
-width: calc(100% - 170px);
-overflow-y: scroll;
-}
+        html,
+        body {
+            height: 100%;
+        }
+
+        .main .down {
+            height: 55px;
+        }
+
+        .main .up {
+            height: calc(100% - 55px);
+        }
+
+        .main .right {
+            width: 170px;
+        }
+
+        .main .left {
+            width: calc(100% - 170px);
+            overflow-y: scroll;
+        }
     </style>
     <title>client</title>
 </head>
@@ -29,23 +34,34 @@ overflow-y: scroll;
 <body>
     <div class="container-lg h-100 bg-primary-subtle p-2 main d-flex flex-column">
         <div class="up d-flex">
-        <div class="left bg-warning-subtle me-1 p-1"></div>
-        <div class="right bg-secondary-subtle h-100 rounded-1 p-1">
-        </div>
+            <div class="left bg-warning-subtle me-1 p-1">
+                <div>
+                    ${fromID}
+                    <div class="badge bg-primary">說</div>:
+                    ${}
+                </div>
+            </div>
+            <div class="right bg-secondary-subtle h-100 rounded-1 p-1">
+            </div>
         </div>
         <div class="input-group input-group-lg my-2 down">
-        <input type="text" class="form-control" name="msg">
-        <div class="btn btn-primary input-group-text btn-send">送出訊息</div>
+            <input type="text" class="form-control" name="msg">
+            <div class="btn btn-primary input-group-text btn-send">送出訊息</div>
         </div>
-        </div>
+    </div>
 
     <script>
         const ws = new WebSocket("ws://localhost:8080")
+        const btnSend = document.querySelector(".btn-send");
+        const msgInput = document.querySelector("[name=msg]");
+        const leftArea = document.querySelector(".up .left");
+        const rightArea = document.querySelector(".up .right");
         const userID = new Date().getTime().toString();
         let clientList;
 
         ws.addEventListener("open", () => {
             console.log('新的使用者連線,註冊使用者ID');
+            leftArea.innerHTML += `<div>你已經進入聊天室，你的ID是: ${userID}</div>`
             let params = {
                 type: "register",
                 userID
@@ -64,16 +80,38 @@ overflow-y: scroll;
                 clientList = result.otherClients;
                 setClientList()
             }
+            if (result.type === "message") {
+
+            }
+        });
+
+        msgInput.addEventListener("keydown", e => {
+            if (e.key === "Enter") {
+                if (msgInput.value === "") {
+
+                } else {
+                    sendMsg();
+                }
+            }
         })
 
+        function sendMsg() {
+            let message = msgInput.value;
+            let params = {
+                type: "message",
+                message,
+                fromID: userID
+            }
+            if (targetUserID) {
+                params.targetUserID = targetUserID;
+            }
+            ws.send(JSON.stringify(params));
+            msgInput.value = "";
+        }
+
+
         function setClientList() {
-            let clientDOM = "<div>";
-            clientList.forEach(client => {
-                let myself = (client === userID) ? "myself" : "";
-                clientDOM += `<div class="${myself}">${client}</div>`
-            });
-            clientDOM += "</div>"
-            document.querySelector("body").innerHTML = clientDOM;
+
         }
     </script>
 </body>

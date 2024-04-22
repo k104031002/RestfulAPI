@@ -37,14 +37,30 @@ wss.on("connection", (connection) => {
         }
         // {
         //     type: "message",
-        //         message: "你好",
-        //             fromID: "18982734564561",
-        //                 targetUserID: "17815219291211"
+        //     message: "你好",
+        //     fromID: "18982734564561",
+        //     targetUserID: "17815219291211"
         // }
 
         if (parsedMessage.type === "message") {
+            const { message, fromID, targetUserID } = parsedMessage;
+            if (targetUserID) {
+                // 悄悄話
 
-            return falsee;
+
+                return fromID
+            }
+            // 公開說
+            wss.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({
+                        type: "message",
+                        message,
+                        fromID,
+                    }));
+                }
+            });
+            return false;
         }
         // wss.clients.forEach((client) => {
         //     if (client.readyState === WebSocket.OPEN) {
