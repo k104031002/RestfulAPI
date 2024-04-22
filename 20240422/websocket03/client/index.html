@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .myself::after {
+            content: "<= 我啦";
+            font-size: 12px;
+            color: red;
+        }
+    </style>
+    <title>client</title>
+</head>
+
+<body>
+    <div>179234293640456</div>
+    <div class="myself">179234299544821</div>
+
+    <script>
+        const ws = new WebSocket("ws://localhost:8080")
+        const userID = new Date().getTime().toString();
+        let clientList;
+
+        ws.addEventListener("open", () => {
+            console.log('新的使用者連線,註冊使用者ID');
+            let params = {
+                type:"register",
+                userID
+            }
+            ws.send(JSON.stringify(params));
+        });
+        
+    </script>
+</body>
+
+</html>

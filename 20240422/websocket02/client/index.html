@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./css/bootstrap.min.css">
+    <style>
+        html,
+        body {
+            height: 100%;
+        }
+
+        .main .left {
+            width: 250px;
+            margin-right: 10px;
+        }
+
+        .main .right {
+            width: calc(100% - 250px);
+        }
+    </style>
+    <title>用戶端</title>
+</head>
+
+<body>
+    <div class="container-lg h-100 bg-primary-subtle p-2 main d-flex">
+        <div class="left bg-secondary h-100 rounded-1 p-2"></div>
+        <div class="right bg-warning-subtle p-2"></div>
+    </div>
+    <div class="alert-container position-fixed bottom-0 end-0 p-3">
+        <div class="alert alert-danger" role="alert">
+            123 123 123
+        </div>
+    </div>
+    <script>
+        const alertContainer = document.querySelector(".alert-container");
+        const ws = new WebSocket("ws://localhost:8080");
+        ws.addEventListener("message", async event => {
+            const text = await event.data.text();
+            let alert = `<div class="alert alert-danger" role="alert">
+           伺服器公告:${text}
+        </div>`;
+        alertContainer.innerHTML += alert;
+         })
+    </script>
+</body>
+
+</html>
