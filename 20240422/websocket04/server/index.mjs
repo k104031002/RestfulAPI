@@ -21,6 +21,7 @@ wss.on("connection", (connection) => {
 
         if (parsedMessage.type === "register") {
             const userID = parsedMessage.userID;
+            connection.userID = userID;
             clients[userID] = connection;
 
             const otherClients = Object.keys(clients);
